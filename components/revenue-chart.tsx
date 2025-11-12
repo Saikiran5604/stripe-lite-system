@@ -86,7 +86,7 @@ export function RevenueChart({ data }: { data: any[] }) {
     <div className="space-y-4">
       <div className="flex items-center gap-4 text-sm flex-wrap">
         <div className="flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-green-500" />
+          <TrendingUp className="w-4 h-4 text-chart-1" />
           <span className="text-muted-foreground">
             Total: <span className="font-semibold text-foreground">${totalRevenue.toFixed(2)}</span>
           </span>
@@ -106,31 +106,34 @@ export function RevenueChart({ data }: { data: any[] }) {
         <ResponsiveContainer width="100%" height="100%">
           {useBarChart ? (
             <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border/30" />
               <XAxis
                 dataKey="shortMonth"
                 tickLine={false}
                 axisLine={false}
                 tickMargin={12}
+                className="text-muted-foreground text-xs"
                 tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickMargin={12}
+                className="text-muted-foreground text-xs"
                 tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
                 tickFormatter={(value) => `$${value.toFixed(0)}`}
                 domain={[0, Math.ceil(maxRevenue * 1.2)]}
               />
               <ChartTooltip
-                cursor={{ fill: "hsl(var(--muted))", opacity: 0.1 }}
+                cursor={{ fill: "hsl(var(--muted))", opacity: 0.15 }}
                 content={({ active, payload }) => {
                   if (active && payload && payload.length && payload[0].payload.revenue > 0) {
                     return (
-                      <div className="bg-background border rounded-lg shadow-lg p-3 space-y-1">
-                        <p className="text-sm font-semibold">{payload[0].payload.month}</p>
+                      <div className="bg-popover border rounded-lg shadow-lg p-3 space-y-1">
+                        <p className="text-sm font-semibold text-popover-foreground">{payload[0].payload.month}</p>
                         <p className="text-sm text-muted-foreground">
-                          Revenue: <span className="font-bold text-foreground">{payload[0].payload.formatted}</span>
+                          Revenue:{" "}
+                          <span className="font-bold text-popover-foreground">{payload[0].payload.formatted}</span>
                         </p>
                       </div>
                     )
@@ -148,18 +151,20 @@ export function RevenueChart({ data }: { data: any[] }) {
                   <stop offset="95%" stopColor="var(--color-revenue)" stopOpacity={0.05} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.3} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border/30" />
               <XAxis
                 dataKey="shortMonth"
                 tickLine={false}
                 axisLine={false}
                 tickMargin={12}
+                className="text-muted-foreground text-xs"
                 tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
               />
               <YAxis
                 tickLine={false}
                 axisLine={false}
                 tickMargin={12}
+                className="text-muted-foreground text-xs"
                 tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
                 tickFormatter={(value) => `$${value.toFixed(0)}`}
                 domain={[0, Math.ceil(maxRevenue * 1.2)]}
@@ -169,10 +174,11 @@ export function RevenueChart({ data }: { data: any[] }) {
                 content={({ active, payload }) => {
                   if (active && payload && payload.length && payload[0].payload.revenue > 0) {
                     return (
-                      <div className="bg-background border rounded-lg shadow-lg p-3 space-y-1">
-                        <p className="text-sm font-semibold">{payload[0].payload.month}</p>
+                      <div className="bg-popover border rounded-lg shadow-lg p-3 space-y-1">
+                        <p className="text-sm font-semibold text-popover-foreground">{payload[0].payload.month}</p>
                         <p className="text-sm text-muted-foreground">
-                          Revenue: <span className="font-bold text-foreground">{payload[0].payload.formatted}</span>
+                          Revenue:{" "}
+                          <span className="font-bold text-popover-foreground">{payload[0].payload.formatted}</span>
                         </p>
                       </div>
                     )
@@ -188,7 +194,6 @@ export function RevenueChart({ data }: { data: any[] }) {
                 stroke="var(--color-revenue)"
                 strokeWidth={3}
                 dot={(props: any) => {
-                  // Only show dots for actual data points (non-zero revenue)
                   if (props.payload.revenue > 0) {
                     return (
                       <circle
@@ -196,7 +201,7 @@ export function RevenueChart({ data }: { data: any[] }) {
                         cy={props.cy}
                         r={5}
                         fill="var(--color-revenue)"
-                        stroke="hsl(var(--background))"
+                        stroke="hsl(var(--card))"
                         strokeWidth={2}
                       />
                     )
@@ -207,7 +212,7 @@ export function RevenueChart({ data }: { data: any[] }) {
                   fill: "var(--color-revenue)",
                   strokeWidth: 2,
                   r: 7,
-                  stroke: "hsl(var(--background))",
+                  stroke: "hsl(var(--card))",
                 }}
               />
             </AreaChart>
