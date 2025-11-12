@@ -9,6 +9,7 @@ const signupSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   name: z.string().min(1, "Name is required"),
+  adminSecretKey: z.string().optional(),
 })
 
 const loginSchema = z.object({
@@ -22,11 +23,11 @@ export async function signup(formData: FormData) {
       email: formData.get("email") as string,
       password: formData.get("password") as string,
       name: formData.get("name") as string,
+      adminSecretKey: formData.get("adminSecretKey") as string,
     }
 
     const validated = signupSchema.parse(data)
 
-    // Check if user exists
     const existingUser = await sql`
       SELECT id FROM users WHERE email = ${validated.email}
     `
@@ -35,12 +36,14 @@ export async function signup(formData: FormData) {
       return { error: "User already exists with this email" }
     }
 
-    // Hash password
     const passwordHash = await hashPassword(validated.password)
+
+    const adminSecret = process.env.ADMIN_SECRET_KEY || "stripe-lite-admin-2024"
+    const isAdminSignup = validated.adminSecretKey === adminSecret
 
     const userCount = await sql`SELECT COUNT(*) as count FROM users`
     const isFirstUser = Number.parseInt(userCount[0].count) === 0
-    const userRole = isFirstUser ? "admin" : "user"
+    const userRole = isAdminSignup || isFirstUser ? "admin" : "user"
 
     const result = await sql`
       INSERT INTO users (email, password_hash, name, role)
@@ -57,7 +60,6 @@ export async function signup(formData: FormData) {
       role: user.role,
     })
 
-    // Set cookie
     await setAuthCookie(token)
 
     return { success: true }
@@ -95,7 +97,6 @@ export async function login(formData: FormData) {
 
     const user = result[0]
 
-    // Verify password
     const isValid = await verifyPassword(validated.password, user.password_hash)
 
     if (!isValid) {
@@ -109,7 +110,6 @@ export async function login(formData: FormData) {
       role: user.role,
     })
 
-    // Set cookie
     await setAuthCookie(token)
 
     return { success: true }

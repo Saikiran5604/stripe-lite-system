@@ -5,14 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { useActionState } from "react"
+import { useActionState, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Spinner } from "@/components/ui/spinner"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Shield } from "lucide-react"
 
 export default function SignupPage() {
   const router = useRouter()
+  const [showAdminKey, setShowAdminKey] = useState(false)
+
   const [state, formAction, isPending] = useActionState(async (_prevState: any, formData: FormData) => {
     const result = await signup(formData)
     if (result.success) {
@@ -61,6 +63,35 @@ export default function SignupPage() {
                 required
                 autoComplete="new-password"
               />
+            </div>
+
+            <div className="pt-2 border-t">
+              <button
+                type="button"
+                onClick={() => setShowAdminKey(!showAdminKey)}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Shield className="h-4 w-4" />
+                {showAdminKey ? "Hide" : "Have an"} admin access key?
+              </button>
+
+              {showAdminKey && (
+                <div className="space-y-2 mt-3">
+                  <Label htmlFor="adminSecretKey" className="text-sm">
+                    Admin Secret Key
+                  </Label>
+                  <Input
+                    id="adminSecretKey"
+                    name="adminSecretKey"
+                    type="password"
+                    placeholder="Enter admin secret key"
+                    autoComplete="off"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    If you have an admin secret key, enter it here to get admin privileges
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
