@@ -2,7 +2,7 @@
 
 import { sql } from "@/lib/db"
 import { hashPassword, verifyPassword, createToken, setAuthCookie, clearAuthCookie } from "@/lib/auth"
-import { redirect } from "next/navigation"
+import { redirect } from 'next/navigation'
 import { z } from "zod"
 
 const signupSchema = z.object({
@@ -17,16 +17,34 @@ const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 })
 
+function getFormValue(formData: FormData, key: string): string {
+  const value = formData.get(key)
+  if (value === null || value === undefined) return ""
+  return String(value).trim()
+}
+
 export async function signup(formData: FormData) {
   try {
+    console.log("[v0] Starting signup process")
+    
     const data = {
-      email: formData.get("email") as string,
-      password: formData.get("password") as string,
-      name: formData.get("name") as string,
-      adminSecretKey: formData.get("adminSecretKey") as string,
+      email: getFormValue(formData, "email"),
+      password: getFormValue(formData, "password"),
+      name: getFormValue(formData, "name"),
+      adminSecretKey: getFormValue(formData, "adminSecretKey"),
     }
 
-    const validated = signupSchema.parse(data)
+    console.log("[v0] Form data extracted:", { email: data.email, name: data.name, hasAdminKey: !!data.adminSecretKey })
+
+    const validationResult = signupSchema.safeParse(data)
+    if (!validationResult.success) {
+      const firstError = validationResult.error.errors[0]
+      console.log("[v0] Validation failed:", firstError)
+      return { error: firstError.message }
+    }
+    
+    const validated = validationResult.data
+    console.log("[v0] Validation passed for email:", validated.email)
 
     const existingUser = await sql`
       SELECT id FROM users WHERE email = ${validated.email}
@@ -45,11 +63,28 @@ export async function signup(formData: FormData) {
     const isFirstUser = Number.parseInt(userCount[0].count) === 0
     const userRole = isAdminSignup || isFirstUser ? "admin" : "user"
 
-    const result = await sql`
-      INSERT INTO users (email, password_hash, name, role)
-      VALUES (${validated.email}, ${passwordHash}, ${validated.name}, ${userRole})
-      RETURNING id, email, name, role
-    `
+    console.log("[v0] Creating user with role:", userRole)
+
+    let result
+    try {
+      result = await sql`
+        INSERT INTO users (email, password_hash, name, role)
+        VALUES (${validated.email}, ${passwordHash}, ${validated.name}, ${userRole})
+        RETURNING id, email, name, role
+      `
+    } catch (error: any) {
+      if (error.message?.includes('column "role" of relation "users" does not exist')) {
+        console.log("[v0] Role column doesn't exist, inserting without it")
+        result = await sql`
+          INSERT INTO users (email, password_hash, name)
+          VALUES (${validated.email}, ${passwordHash}, ${validated.name})
+          RETURNING id, email, name
+        `
+        result[0].role = 'user'
+      } else {
+        throw error
+      }
+    }
 
     const user = result[0]
 
@@ -57,11 +92,12 @@ export async function signup(formData: FormData) {
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role,
+      role: user.role || 'user',
     })
 
     await setAuthCookie(token)
 
+    console.log("[v0] User created successfully:", user.email)
     return { success: true }
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -69,27 +105,55 @@ export async function signup(formData: FormData) {
     }
     console.error("[v0] Signup error:", error)
     const errorMessage = (error as any)?.message || ""
+    if (errorMessage.includes("Failed to fetch") || errorMessage.includes("fetch failed")) {
+      return { error: "Database connection failed. Please check your database configuration." }
+    }
     if (errorMessage.includes("relation") && errorMessage.includes("does not exist")) {
       return { error: "Database not set up. Please visit /setup to initialize the database." }
     }
-    return { error: "Failed to create account" }
+    return { error: "Failed to create account: " + errorMessage }
   }
 }
 
 export async function login(formData: FormData) {
   try {
     const data = {
-      email: formData.get("email") as string,
-      password: formData.get("password") as string,
+      email: getFormValue(formData, "email"),
+      password: getFormValue(formData, "password"),
     }
 
-    const validated = loginSchema.parse(data)
+    console.log("[v0] Login attempt for email:", data.email)
 
-    const result = await sql`
-      SELECT id, email, name, password_hash, role
-      FROM users 
-      WHERE email = ${validated.email}
-    `
+    const validationResult = loginSchema.safeParse(data)
+    if (!validationResult.success) {
+      const firstError = validationResult.error.errors[0]
+      console.log("[v0] Login validation failed:", firstError)
+      return { error: firstError.message }
+    }
+    
+    const validated = validationResult.data
+
+    let result
+    try {
+      result = await sql`
+        SELECT id, email, name, password_hash, role
+        FROM users 
+        WHERE email = ${validated.email}
+      `
+    } catch (error: any) {
+      if (error.message?.includes('column "role"')) {
+        result = await sql`
+          SELECT id, email, name, password_hash
+          FROM users 
+          WHERE email = ${validated.email}
+        `
+        if (result.length > 0) {
+          result[0].role = 'user'
+        }
+      } else {
+        throw error
+      }
+    }
 
     if (result.length === 0) {
       return { error: "Invalid email or password" }
@@ -107,7 +171,7 @@ export async function login(formData: FormData) {
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role,
+      role: user.role || 'user',
     })
 
     await setAuthCookie(token)
@@ -119,6 +183,9 @@ export async function login(formData: FormData) {
     }
     console.error("[v0] Login error:", error)
     const errorMessage = (error as any)?.message || ""
+    if (errorMessage.includes("Failed to fetch") || errorMessage.includes("fetch failed")) {
+      return { error: "Database connection failed. Please check your database configuration." }
+    }
     if (errorMessage.includes("relation") && errorMessage.includes("does not exist")) {
       return { error: "Database not set up. Please visit /setup to initialize the database." }
     }
