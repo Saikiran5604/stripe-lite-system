@@ -27,11 +27,20 @@ export async function signup(formData: FormData) {
   try {
     console.log("[v0] Starting signup process")
     
+    const rawData = {
+      email: formData.get("email"),
+      password: formData.get("password"),
+      name: formData.get("name"),
+      adminSecretKey: formData.get("adminSecretKey"),
+    }
+    
+    console.log("[v0] Raw form data:", rawData)
+    
     const data = {
-      email: getFormValue(formData, "email"),
-      password: getFormValue(formData, "password"),
-      name: getFormValue(formData, "name"),
-      adminSecretKey: getFormValue(formData, "adminSecretKey"),
+      email: rawData.email ? String(rawData.email).trim() : "",
+      password: rawData.password ? String(rawData.password).trim() : "",
+      name: rawData.name ? String(rawData.name).trim() : "",
+      adminSecretKey: rawData.adminSecretKey ? String(rawData.adminSecretKey).trim() : undefined,
     }
 
     console.log("[v0] Form data extracted:", { email: data.email, name: data.name, hasAdminKey: !!data.adminSecretKey })
@@ -117,9 +126,16 @@ export async function signup(formData: FormData) {
 
 export async function login(formData: FormData) {
   try {
+    const rawData = {
+      email: formData.get("email"),
+      password: formData.get("password"),
+    }
+    
+    console.log("[v0] Raw login data:", rawData)
+    
     const data = {
-      email: getFormValue(formData, "email"),
-      password: getFormValue(formData, "password"),
+      email: rawData.email ? String(rawData.email).trim() : "",
+      password: rawData.password ? String(rawData.password).trim() : "",
     }
 
     console.log("[v0] Login attempt for email:", data.email)
