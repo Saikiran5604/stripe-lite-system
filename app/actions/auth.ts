@@ -9,7 +9,7 @@ const signupSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   name: z.string().min(1, "Name is required"),
-  adminSecretKey: z.string().optional(),
+  adminSecretKey: z.string().optional().nullable().transform(val => val || undefined),
 })
 
 const loginSchema = z.object({
@@ -27,23 +27,14 @@ export async function signup(formData: FormData) {
   try {
     console.log("[v0] Starting signup process")
     
-    const rawData = {
+    const data = {
       email: formData.get("email"),
       password: formData.get("password"),
       name: formData.get("name"),
       adminSecretKey: formData.get("adminSecretKey"),
     }
     
-    console.log("[v0] Raw form data:", rawData)
-    
-    const data = {
-      email: rawData.email ? String(rawData.email).trim() : "",
-      password: rawData.password ? String(rawData.password).trim() : "",
-      name: rawData.name ? String(rawData.name).trim() : "",
-      adminSecretKey: rawData.adminSecretKey ? String(rawData.adminSecretKey).trim() : undefined,
-    }
-
-    console.log("[v0] Form data extracted:", { email: data.email, name: data.name, hasAdminKey: !!data.adminSecretKey })
+    console.log("[v0] Raw form data:", data)
 
     const validationResult = signupSchema.safeParse(data)
     if (!validationResult.success) {

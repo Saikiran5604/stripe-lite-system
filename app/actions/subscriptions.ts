@@ -173,7 +173,7 @@ export async function cancelSubscription(subscriptionId: string) {
 
     await sql`
       UPDATE user_subscriptions 
-      SET status = 'expired', end_date = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      SET status = 'canceled', end_date = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
       WHERE id = ${subscriptionId}
     `
 
@@ -189,7 +189,7 @@ export async function cancelSubscription(subscriptionId: string) {
         ${subscriptionId},
         'canceled',
         ${subscription[0].status},
-        'expired',
+        'canceled',
         ${user.id}
       )
     `

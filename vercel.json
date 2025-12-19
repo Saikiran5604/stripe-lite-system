@@ -1,0 +1,12 @@
+{
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "env": {
+    "NEON_DATABASE_URL": "@neon_database_url",
+    "JWT_SECRET": "@jwt_secret",
+    "ADMIN_SECRET_KEY": "@admin_secret_key"
+  }
+}
