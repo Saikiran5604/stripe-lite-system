@@ -1,4 +1,4 @@
-# Stripe Lite System - Subscription and Billing Management System [
+# Stripe Lite System - Subscription and Billing Management System 
 
 *Automatically synced with your [v0.app](https://v0.app) deployments*
 
