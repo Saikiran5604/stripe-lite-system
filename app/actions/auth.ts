@@ -56,8 +56,8 @@ export async function signup(formData: FormData) {
 
     const passwordHash = await hashPassword(validated.password)
 
-    const adminSecret = process.env.ADMIN_SECRET_KEY || "stripe-lite-admin-2024"
-    const isAdminSignup = validated.adminSecretKey === adminSecret
+    const adminSecret = process.env.ADMIN_SECRET_KEY
+    const isAdminSignup = Boolean(adminSecret) && validated.adminSecretKey === adminSecret
 
     const userCount = await sql`SELECT COUNT(*) as count FROM users`
     const isFirstUser = Number.parseInt(userCount[0].count) === 0

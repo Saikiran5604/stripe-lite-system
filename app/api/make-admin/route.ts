@@ -4,9 +4,13 @@ import bcrypt from "bcryptjs"
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
+    const { email, password, adminKey } = await request.json()
 
-    if (!email || !password) {
+    if (!process.env.ADMIN_SECRET_KEY || adminKey !== process.env.ADMIN_SECRET_KEY) {
+      return NextResponse.json({ error: "Invalid admin recovery key" }, { status: 401 })
+    }
+
+    if (!email || !password || password.length < 8) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
     }
 

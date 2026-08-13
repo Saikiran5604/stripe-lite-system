@@ -54,6 +54,7 @@ export async function POST() {
         user_id INTEGER NOT NULL,
         subscription_id INTEGER NOT NULL,
         amount DECIMAL(10,2) NOT NULL,
+        invoice_number VARCHAR(100),
         status VARCHAR(50) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'failed', 'refunded')),
         due_date TIMESTAMP NOT NULL,
         paid_at TIMESTAMP,
@@ -83,15 +84,23 @@ export async function POST() {
         id SERIAL PRIMARY KEY,
         subscription_id INTEGER NOT NULL,
         action VARCHAR(100) NOT NULL,
-        old_status VARCHAR(50),
+        previous_status VARCHAR(50),
         new_status VARCHAR(50),
+        changed_by INTEGER,
+        notes TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (subscription_id) REFERENCES user_subscriptions(id) ON DELETE CASCADE
       )
     `
 
-    // Create indexes
-    await sql`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`
+  // Keep upgrades safe for databases created by earlier versions.
+  await sql`ALTER TABLE invoices ADD COLUMN IF NOT EXISTS invoice_number VARCHAR(100)`
+  await sql`ALTER TABLE subscription_history ADD COLUMN IF NOT EXISTS previous_status VARCHAR(50)`
+  await sql`ALTER TABLE subscription_history ADD COLUMN IF NOT EXISTS changed_by INTEGER`
+  await sql`ALTER TABLE subscription_history ADD COLUMN IF NOT EXISTS notes TEXT`
+
+  // Create indexes
+  await sql`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`
     await sql`CREATE INDEX IF NOT EXISTS idx_user_subscriptions_user_id ON user_subscriptions(user_id)`
     await sql`CREATE INDEX IF NOT EXISTS idx_user_subscriptions_status ON user_subscriptions(status)`
     await sql`CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON invoices(user_id)`

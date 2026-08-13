@@ -12,6 +12,9 @@ export async function getUserSubscriptions(userId?: string) {
     }
 
     const targetUserId = userId || user.id
+    if (targetUserId !== user.id && user.role !== "admin") {
+      return { error: "Forbidden" }
+    }
 
     const subscriptions = await sql`
       SELECT 
@@ -73,8 +76,12 @@ export async function createSubscription(userId: string, planId: string) {
       return { error: "Unauthorized" }
     }
 
+    if (String(user.id) !== String(userId) && user.role !== "admin") {
+      return { error: "Forbidden" }
+    }
+
     const existing = await sql`
-      SELECT id FROM user_subscriptions 
+      SELECT id FROM user_subscriptions
       WHERE user_id = ${userId} AND plan_id = ${planId} AND status = 'active'
     `
 
@@ -162,18 +169,26 @@ export async function cancelSubscription(subscriptionId: string) {
       return { error: "Unauthorized" }
     }
 
-    // Get subscription
+    // Get only an owned subscription; admins may manage any subscription through admin tools.
     const subscription = await sql`
-      SELECT * FROM user_subscriptions WHERE id = ${subscriptionId}
+      SELECT us.*, sp.price
+      FROM user_subscriptions us
+      JOIN subscription_plans sp ON us.plan_id = sp.id
+      WHERE us.id = ${subscriptionId}
+        AND (${user.role} = 'admin' OR us.user_id = ${user.id})
     `
 
     if (subscription.length === 0) {
       return { error: "Subscription not found" }
     }
 
+    if (subscription[0].status !== "active" && subscription[0].status !== "paused") {
+      return { error: "Only active or paused subscriptions can be canceled" }
+    }
+
     await sql`
-      UPDATE user_subscriptions 
-      SET status = 'canceled', end_date = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+      UPDATE user_subscriptions
+      SET status = 'cancelled', end_date = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
       WHERE id = ${subscriptionId}
     `
 
@@ -187,9 +202,9 @@ export async function cancelSubscription(subscriptionId: string) {
       )
       VALUES (
         ${subscriptionId},
-        'canceled',
+        'cancelled',
         ${subscription[0].status},
-        'canceled',
+        'cancelled',
         ${user.id}
       )
     `
@@ -211,15 +226,22 @@ export async function pauseSubscription(subscriptionId: string) {
     }
 
     const subscription = await sql`
-      SELECT * FROM user_subscriptions WHERE id = ${subscriptionId}
+      SELECT us.*, sp.price
+      FROM user_subscriptions us
+      JOIN subscription_plans sp ON us.plan_id = sp.id
+      WHERE us.id = ${subscriptionId}
+        AND (${user.role} = 'admin' OR us.user_id = ${user.id})
     `
 
     if (subscription.length === 0) {
       return { error: "Subscription not found" }
     }
+    if (subscription[0].status !== "active") {
+      return { error: "Only active subscriptions can be paused" }
+    }
 
     await sql`
-      UPDATE user_subscriptions 
+      UPDATE user_subscriptions
       SET status = 'paused', updated_at = CURRENT_TIMESTAMP
       WHERE id = ${subscriptionId}
     `
@@ -258,15 +280,22 @@ export async function resumeSubscription(subscriptionId: string) {
     }
 
     const subscription = await sql`
-      SELECT * FROM user_subscriptions WHERE id = ${subscriptionId}
+      SELECT us.*, sp.price
+      FROM user_subscriptions us
+      JOIN subscription_plans sp ON us.plan_id = sp.id
+      WHERE us.id = ${subscriptionId}
+        AND (${user.role} = 'admin' OR us.user_id = ${user.id})
     `
 
     if (subscription.length === 0) {
       return { error: "Subscription not found" }
     }
+    if (subscription[0].status !== "paused") {
+      return { error: "Only paused subscriptions can be resumed" }
+    }
 
     await sql`
-      UPDATE user_subscriptions 
+      UPDATE user_subscriptions
       SET status = 'active', updated_at = CURRENT_TIMESTAMP
       WHERE id = ${subscriptionId}
     `
@@ -332,9 +361,12 @@ export async function getSubscriptionHistory(subscriptionId: string) {
     }
 
     const history = await sql`
-      SELECT * FROM subscription_history 
-      WHERE subscription_id = ${subscriptionId}
-      ORDER BY created_at DESC
+      SELECT sh.*
+      FROM subscription_history sh
+      JOIN user_subscriptions us ON us.id = sh.subscription_id
+      WHERE sh.subscription_id = ${subscriptionId}
+        AND (${user.role} = 'admin' OR us.user_id = ${user.id})
+      ORDER BY sh.created_at DESC
     `
 
     return { history }

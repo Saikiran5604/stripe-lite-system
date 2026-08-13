@@ -105,7 +105,7 @@ export function UserSubscriptionActions({
 
   if (status === "active") {
     return (
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         <form action={pauseAction}>
           <Button type="submit" variant="outline" disabled={isPausing}>
             <Pause className="size-4" />
