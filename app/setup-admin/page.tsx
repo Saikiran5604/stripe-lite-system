@@ -9,7 +9,8 @@ import { CheckCircle2, AlertCircle } from "lucide-react"
 
 export default function SetupAdminPage() {
   const [email, setEmail] = useState("123456@gmail.com")
-  const [password, setPassword] = useState("123456")
+  const [password, setPassword] = useState("")
+  const [adminKey, setAdminKey] = useState("")
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ success: boolean; message: string } | null>(null)
 
@@ -21,7 +22,7 @@ export default function SetupAdminPage() {
       const response = await fetch("/api/make-admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, adminKey }),
       })
 
       const data = await response.json()
@@ -57,6 +58,16 @@ export default function SetupAdminPage() {
           </div>
 
           <div className="space-y-2">
+            <label className="text-sm font-medium">Admin recovery key</label>
+            <Input
+              type="password"
+              value={adminKey}
+              onChange={(e) => setAdminKey(e.target.value)}
+              placeholder="Enter ADMIN_SECRET_KEY"
+            />
+          </div>
+
+          <div className="space-y-2">
             <label className="text-sm font-medium">New Password</label>
             <Input
               type="password"
@@ -66,7 +77,7 @@ export default function SetupAdminPage() {
             />
           </div>
 
-          <Button onClick={handleMakeAdmin} disabled={loading || !email || !password} className="w-full">
+          <Button onClick={handleMakeAdmin} disabled={loading || !email || !password || password.length < 8 || !adminKey} className="w-full">
             {loading ? "Updating..." : "Make Admin & Update Password"}
           </Button>
 
