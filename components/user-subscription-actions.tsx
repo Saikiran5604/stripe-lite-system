@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Pause, Play, XCircle } from "lucide-react"
 import { useActionState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 
 export function UserSubscriptionActions({
@@ -25,6 +26,7 @@ export function UserSubscriptionActions({
   status: string
 }) {
   const { toast } = useToast()
+  const router = useRouter()
 
   const [cancelState, cancelAction, isCanceling] = useActionState(async () => {
     const result = await cancelSubscription(subscriptionId)
@@ -44,6 +46,7 @@ export function UserSubscriptionActions({
   useEffect(() => {
     if (cancelState?.success) {
       toast({ title: "Success", description: "Subscription canceled successfully" })
+      router.refresh()
     } else if (cancelState?.error) {
       toast({ title: "Error", description: cancelState.error, variant: "destructive" })
     }
@@ -52,6 +55,7 @@ export function UserSubscriptionActions({
   useEffect(() => {
     if (pauseState?.success) {
       toast({ title: "Success", description: "Subscription paused successfully" })
+      router.refresh()
     } else if (pauseState?.error) {
       toast({ title: "Error", description: pauseState.error, variant: "destructive" })
     }
@@ -60,6 +64,7 @@ export function UserSubscriptionActions({
   useEffect(() => {
     if (resumeState?.success) {
       toast({ title: "Success", description: "Subscription resumed successfully" })
+      router.refresh()
     } else if (resumeState?.error) {
       toast({ title: "Error", description: resumeState.error, variant: "destructive" })
     }
@@ -124,8 +129,7 @@ export function UserSubscriptionActions({
             <AlertDialogHeader>
               <AlertDialogTitle>Cancel Subscription</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to cancel your subscription? You will lose access to all premium features at the
-                end of your billing period.
+                Are you sure you want to cancel your subscription? Access will be removed immediately and it will disappear from your dashboard.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

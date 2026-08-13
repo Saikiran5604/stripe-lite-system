@@ -11,6 +11,7 @@ import { Package, Receipt } from "lucide-react"
 import Link from "next/link"
 import { UserSubscriptionActions } from "@/components/user-subscription-actions"
 import { PayInvoiceButton } from "@/components/pay-invoice-button"
+import { DashboardLiveRefresh } from "@/components/dashboard-live-refresh"
 
 export default async function DashboardPage() {
   const user = await getSession()
@@ -41,6 +42,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <DashboardLiveRefresh />
       <div className="container mx-auto p-6 max-w-7xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold">My Dashboard</h1>

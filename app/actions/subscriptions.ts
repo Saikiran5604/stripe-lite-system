@@ -45,9 +45,12 @@ export async function getAllSubscriptions() {
     if (!user) {
       return { error: "Unauthorized" }
     }
+    if (user.role !== "admin") {
+      return { error: "Forbidden" }
+    }
 
     const subscriptions = await sql`
-      SELECT 
+      SELECT
         us.*,
         u.email as user_email,
         u.name as user_name,
